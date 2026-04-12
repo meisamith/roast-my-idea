@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RoastMyIdea</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #080808;
+      --surface:   #111111;
+      --surface-2: #181818;
+      --border:    #242424;
+      --border-2:  #2e2e2e;
+      --text:      #f2f2f2;
+      --muted:     #666;
+      --accent:    #ff4500;
+      --accent-dim:#7a2000;
+      --red:       #ef4444;
+      --orange:    #f97316;
+      --green:     #22c55e;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 3rem 1.5rem 6rem;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -1px;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .logo span { color: var(--accent); }
+
+    .tagline {
+      color: var(--muted);
+      font-size: 0.95rem;
+      letter-spacing: 0.01em;
+    }
+
+    /* ── Input panel ── */
+    .input-panel {
+      max-width: 680px;
+      margin: 0 auto 3rem;
+    }
+
+    textarea {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1rem;
+      line-height: 1.6;
+      padding: 1.1rem 1.25rem;
+      resize: vertical;
+      min-height: 130px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    textarea::placeholder { color: var(--muted); }
+
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(255,69,0,0.12);
+    }
+
+    .roast-btn {
+      margin-top: 0.85rem;
+      width: 100%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      padding: 0.9rem 1.5rem;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+      box-shadow: 0 4px 24px rgba(255,69,0,0.25);
+    }
+
+    .roast-btn:hover:not(:disabled) {
+      background: #e03d00;
+      box-shadow: 0 4px 32px rgba(255,69,0,0.4);
+    }
+
+    .roast-btn:active:not(:disabled) { transform: scale(0.99); }
+    .roast-btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+
+    .textarea-footer {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 0.4rem;
+    }
+
+    .char-counter {
+      font-size: 0.78rem;
+      color: var(--muted);
+      transition: color 0.2s;
+    }
+
+    .char-counter.near-limit { color: var(--orange); }
+    .char-counter.at-limit   { color: var(--red); font-weight: 600; }
+
+    .error-msg {
+      margin-top: 0.85rem;
+      color: var(--red);
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    /* ── Loading ── */
+    #loading {
+      display: none;
+      text-align: center;
+      padding: 4rem 0;
+    }
+
+    .loader-ring {
+      width: 48px;
+      height: 48px;
+      border: 3px solid var(--border-2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 1.25rem;
+    }
+
+    .loader-text {
+      color: var(--muted);
+      font-size: 0.95rem;
+      letter-spacing: 0.02em;
+    }
+
+    .loader-dots::after {
+      content: '';
+      animation: dots 1.4s steps(4, end) infinite;
+    }
+
+    @keyframes dots {
+      0%   { content: ''; }
+      25%  { content: '.'; }
+      50%  { content: '..'; }
+      75%  { content: '...'; }
+      100% { content: ''; }
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Results ── */
+    #results { display: none; }
+
+    .results-label {
+      text-align: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+
+    /* ── Roast grid ── */
+    .roast-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      max-width: 1100px;
+      margin: 0 auto 1rem;
+    }
+
+    /* Last row: 2 cards centered */
+    .roast-grid .roast-card:nth-child(4) { grid-column: 1 / 2; margin-left: auto; width: 100%; }
+    .roast-grid .roast-card:nth-child(5) { grid-column: 2 / 3; margin-right: auto; width: 100%; }
+
+    @media (max-width: 860px) {
+      .roast-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .roast-grid .roast-card:nth-child(4),
+      .roast-grid .roast-card:nth-child(5) {
+        grid-column: auto;
+        margin: 0;
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 540px) {
+      .roast-grid { grid-template-columns: 1fr; }
+    }
+
+    .roast-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.4s ease, transform 0.4s ease, border-color 0.2s;
+      animation: none;
+    }
+
+    .roast-card.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .roast-card:hover {
+      border-color: var(--border-2);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .card-emoji {
+      font-size: 1.4rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .card-persona {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    .card-divider {
+      height: 1px;
+      background: var(--border);
+    }
+
+    .card-roast {
+      font-size: 0.92rem;
+      line-height: 1.7;
+      color: #d0d0d0;
+      flex: 1;
+    }
+
+    .card-severity {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .severity-bar-track {
+      flex: 1;
+      height: 3px;
+      background: var(--border-2);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .severity-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: var(--accent);
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .severity-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    /* ── Survival score ── */
+    .score-section {
+      max-width: 1100px;
+      margin: 2rem auto 0;
+      padding: 2.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      text-align: center;
+    }
+
+    .score-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    .score-number {
+      font-size: clamp(5rem, 12vw, 9rem);
+      font-weight: 900;
+      letter-spacing: -4px;
+      line-height: 1;
+      transition: color 0.5s;
+    }
+
+    .score-suffix {
+      font-size: 2rem;
+      font-weight: 300;
+      letter-spacing: 0;
+      opacity: 0.4;
+    }
+
+    .score-verdict {
+      margin-top: 0.75rem;
+      font-size: 0.95rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .score-red    { color: var(--red); }
+    .score-orange { color: var(--orange); }
+    .score-green  { color: var(--green); }
+
+    /* ── Copy button ── */
+    .copy-btn {
+      margin-top: 1.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border-2);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 0.6rem 1.1rem;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+
+    .copy-btn:hover {
+      color: var(--text);
+      border-color: #444;
+      background: var(--surface-2);
+    }
+
+    .copy-btn.copied {
+      color: var(--green);
+      border-color: var(--green);
+    }
+
+    .copy-btn svg {
+      flex-shrink: 0;
+      transition: opacity 0.15s;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">Roast<span>My</span>Idea 🔥</div>
+    <p class="tagline">Five brutal critics. One survival score. No mercy.</p>
+  </header>
+
+  <div class="input-panel">
+    <textarea
+      id="idea"
+      placeholder="Describe your startup idea... e.g. 'An app where dog owners rent their pets to lonely people for $10/hour'"
+      rows="4"
+      maxlength="500"
+    ></textarea>
+    <div class="textarea-footer">
+      <span class="char-counter" id="charCounter">0 / 500</span>
+    </div>
+    <button class="roast-btn" id="roastBtn" onclick="roastIdea()">Roast My Idea 🔥</button>
+    <p class="error-msg" id="errorMsg"></p>
+  </div>
+
+  <div id="loading">
+    <div class="loader-ring"></div>
+    <p class="loader-text">Summoning the roasters<span class="loader-dots"></span></p>
+  </div>
+
+  <div id="results">
+    <p class="results-label">The Panel Has Spoken</p>
+
+    <div class="roast-grid" id="roastGrid"></div>
+
+    <div class="score-section">
+      <p class="score-title">Survival Score</p>
+      <div class="score-number" id="scoreNumber">—<span class="score-suffix">/100</span></div>
+      <p class="score-verdict" id="scoreVerdict"></p>
+      <button class="copy-btn" id="copyBtn" onclick="copyResult()">
+        <svg id="copyIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>
+        <svg id="checkIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <span id="copyLabel">Copy Result</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    let lastResult = null; // { idea, roasts, survival_score }
+
+    function formatResult({ idea, roasts, survival_score }) {
+      const lines = [];
+      lines.push(`💡 "${idea}"`);
+      lines.push('');
+      lines.push('I roasted my startup idea and here\'s what the panel said:\n');
+
+      roasts.forEach(r => {
+        lines.push(`${r.emoji} ${r.persona.toUpperCase()}`);
+        lines.push(r.roast);
+        lines.push('');
+      });
+
+      const verdict = scoreVerdict(survival_score);
+      lines.push(`🔥 Survival Score: ${survival_score}/100`);
+      lines.push(`"${verdict}"`);
+      lines.push('');
+      lines.push('Roast your idea → roastmyidea.com');
+
+      return lines.join('\n');
+    }
+
+    async function copyResult() {
+      if (!lastResult) return;
+
+      const btn = document.getElementById('copyBtn');
+      const copyIcon = document.getElementById('copyIcon');
+      const checkIcon = document.getElementById('checkIcon');
+      const label = document.getElementById('copyLabel');
+
+      try {
+        await navigator.clipboard.writeText(formatResult(lastResult));
+        btn.classList.add('copied');
+        copyIcon.style.display = 'none';
+        checkIcon.style.display = '';
+        label.textContent = 'Copied!';
+
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          copyIcon.style.display = '';
+          checkIcon.style.display = 'none';
+          label.textContent = 'Copy Result';
+        }, 2200);
+      } catch {
+        // Fallback for browsers that block clipboard without interaction context
+        label.textContent = 'Copy failed';
+        setTimeout(() => { label.textContent = 'Copy Result'; }, 2000);
+      }
+    }
+
+    function severityColor(s) {
+      if (s >= 8) return '#ef4444';
+      if (s >= 5) return '#f97316';
+      return '#22c55e';
+    }
+
+    function buildCard(roast, index) {
+      const card = document.createElement('div');
+      card.className = 'roast-card';
+      card.style.transitionDelay = `${index * 80}ms`;
+
+      const fillPct = (roast.severity / 10) * 100;
+      const barColor = severityColor(roast.severity);
+
+      card.innerHTML = `
+        <div class="card-header">
+          <span class="card-emoji">${roast.emoji}</span>
+          <span class="card-persona">${roast.persona}</span>
+        </div>
+        <div class="card-divider"></div>
+        <p class="card-roast">${escapeHtml(roast.roast)}</p>
+        <div class="card-severity">
+          <div class="severity-bar-track">
+            <div class="severity-bar-fill" style="width:0%; background:${barColor}" data-fill="${fillPct}"></div>
+          </div>
+          <span class="severity-label">${roast.severity}/10</span>
+        </div>
+      `;
+      return card;
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function scoreVerdict(n) {
+      if (n < 20) return "Your idea didn't survive the room.";
+      if (n < 40) return "Rough. Very rough. But failure builds character.";
+      if (n < 60) return "Mixed signals. Pivot, fix, or pray.";
+      if (n < 75) return "Not bad. A few holes to patch.";
+      if (n < 90) return "Solid idea. Don't blow the execution.";
+      return "Somehow walked out unscathed. Impressive.";
+    }
+
+    async function roastIdea() {
+      const idea = document.getElementById('idea').value.trim();
+      const btn = document.getElementById('roastBtn');
+      const errorMsg = document.getElementById('errorMsg');
+      const loading = document.getElementById('loading');
+      const results = document.getElementById('results');
+      const grid = document.getElementById('roastGrid');
+
+      errorMsg.style.display = 'none';
+
+      if (!idea) {
+        errorMsg.textContent = 'Please describe your idea first.';
+        errorMsg.style.display = 'block';
+        return;
+      }
+
+      // Loading state
+      btn.disabled = true;
+      btn.textContent = 'Roasting...';
+      loading.style.display = 'block';
+      results.style.display = 'none';
+      grid.innerHTML = '';
+
+      try {
+        const res = await fetch('/roast', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idea }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+
+        // Store for copy
+        lastResult = { idea, roasts: data.roasts, survival_score: data.survival_score };
+
+        // Build cards
+        data.roasts.forEach((roast, i) => {
+          grid.appendChild(buildCard(roast, i));
+        });
+
+        // Survival score
+        const score = data.survival_score;
+        const scoreEl = document.getElementById('scoreNumber');
+        const verdictEl = document.getElementById('scoreVerdict');
+
+        scoreEl.className = 'score-number ' + (
+          score < 40 ? 'score-red' : score <= 70 ? 'score-orange' : 'score-green'
+        );
+        scoreEl.innerHTML = `${score}<span class="score-suffix">/100</span>`;
+        verdictEl.textContent = scoreVerdict(score);
+
+        // Show results
+        loading.style.display = 'none';
+        results.style.display = 'block';
+
+        // Staggered card entrance
+        requestAnimationFrame(() => {
+          document.querySelectorAll('.roast-card').forEach(card => {
+            card.classList.add('visible');
+          });
+        });
+
+        // Animate severity bars after cards appear
+        setTimeout(() => {
+          document.querySelectorAll('.severity-bar-fill').forEach(bar => {
+            bar.style.width = bar.dataset.fill + '%';
+          });
+        }, 200);
+
+        results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      } catch (err) {
+        loading.style.display = 'none';
+        errorMsg.textContent = err.message;
+        errorMsg.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Roast My Idea 🔥';
+      }
+    }
+
+    const ideaEl = document.getElementById('idea');
+    const counterEl = document.getElementById('charCounter');
+    const LIMIT = 500;
+
+    ideaEl.addEventListener('input', () => {
+      const len = ideaEl.value.length;
+      counterEl.textContent = `${len} / ${LIMIT}`;
+      counterEl.className = 'char-counter' + (len >= LIMIT ? ' at-limit' : len >= LIMIT * 0.85 ? ' near-limit' : '');
+    });
+
+    ideaEl.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) roastIdea();
+    });
+  </script>
+</body>
+</html>
