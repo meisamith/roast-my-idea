@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Idea, Rescued — RoastMyIdea</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #080808;
+      --surface:   #111111;
+      --surface-2: #181818;
+      --border:    #242424;
+      --border-2:  #2e2e2e;
+      --text:      #f2f2f2;
+      --muted:     #666;
+      --accent:    #ff4500;
+      --red:       #ef4444;
+      --orange:    #f97316;
+      --green:     #22c55e;
+      --green-dim: #14532d;
+      --blue:      #3b82f6;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 3rem 1.5rem 6rem;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    .page-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .page-title {
+      font-size: clamp(1.75rem, 5vw, 2.75rem);
+      font-weight: 900;
+      letter-spacing: -1px;
+      margin-bottom: 1rem;
+    }
+
+    .idea-quote {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--green);
+      border-radius: 12px;
+      padding: 1.1rem 1.4rem;
+      font-size: 0.95rem;
+      color: #ccc;
+      font-style: italic;
+      text-align: left;
+      line-height: 1.6;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    /* ── Section label ── */
+    .section-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+
+    /* ── Card base ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+    }
+
+    /* ── Stronger idea ── */
+    .stronger-card {
+      border-color: var(--green);
+      margin-bottom: 1.5rem;
+      box-shadow: 0 0 0 1px rgba(34,197,94,0.12), 0 8px 32px rgba(34,197,94,0.06);
+    }
+
+    .stronger-card .section-label { color: var(--green); }
+
+    .stronger-idea-text {
+      font-size: 1.15rem;
+      font-weight: 600;
+      line-height: 1.6;
+      color: var(--text);
+    }
+
+    /* ── Why it can work ── */
+    .why-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 640px) {
+      .why-grid { grid-template-columns: 1fr; }
+    }
+
+    .why-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.25rem;
+    }
+
+    .why-check {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      background: rgba(34,197,94,0.12);
+      border-radius: 50%;
+      color: var(--green);
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 0.65rem;
+      flex-shrink: 0;
+    }
+
+    .why-text {
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #ccc;
+    }
+
+    /* ── Kill the competition ── */
+    .compete-card {
+      border-color: #3d1515;
+      background: #0e0808;
+      border-left: 3px solid var(--red);
+      margin-bottom: 1.5rem;
+    }
+
+    .compete-card .section-label { color: var(--red); }
+
+    .compete-text {
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: #d0d0d0;
+    }
+
+    /* ── Validate in 30 days ── */
+    .validate-card {
+      margin-bottom: 1.5rem;
+    }
+
+    .validate-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 0.25rem;
+    }
+
+    .validate-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      font-size: 0.92rem;
+      line-height: 1.6;
+      color: #ccc;
+    }
+
+    .step-circle {
+      flex-shrink: 0;
+      width: 26px;
+      height: 26px;
+      border: 2px solid var(--border-2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    /* ── Don't do this ── */
+    .dont-card {
+      margin-bottom: 1.5rem;
+    }
+
+    .dont-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 0.25rem;
+    }
+
+    .dont-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      font-size: 0.92rem;
+      line-height: 1.6;
+      color: #ccc;
+    }
+
+    .x-badge {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      background: rgba(239,68,68,0.15);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: var(--red);
+      margin-top: 2px;
+    }
+
+    /* ── Target + Revenue ── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 540px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    .icon-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.65rem;
+    }
+
+    .icon-badge {
+      width: 32px;
+      height: 32px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+
+    .icon-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+    }
+
+    .detail-text {
+      font-size: 0.92rem;
+      line-height: 1.65;
+      color: #d0d0d0;
+    }
+
+    /* ── New survival score ── */
+    .score-section {
+      background: var(--surface);
+      border: 1px solid var(--green);
+      border-radius: 20px;
+      padding: 2.5rem;
+      text-align: center;
+      box-shadow: 0 0 0 1px rgba(34,197,94,0.08), 0 8px 40px rgba(34,197,94,0.08);
+      margin-bottom: 2rem;
+    }
+
+    .score-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    .score-number {
+      font-size: clamp(5rem, 12vw, 9rem);
+      font-weight: 900;
+      letter-spacing: -4px;
+      line-height: 1;
+      color: var(--green);
+    }
+
+    .score-suffix {
+      font-size: 2rem;
+      font-weight: 300;
+      letter-spacing: 0;
+      opacity: 0.4;
+    }
+
+    .score-delta {
+      margin-top: 0.6rem;
+      font-size: 0.9rem;
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    .score-explanation {
+      margin-top: 0.75rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+      font-style: italic;
+      max-width: 520px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ── Back button ── */
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border-2);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 0.65rem 1.2rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+
+    .back-btn:hover {
+      color: var(--text);
+      border-color: #444;
+      background: var(--surface-2);
+    }
+
+    /* ── Error ── */
+    .error-box {
+      background: #1a0606;
+      border: 1px solid #3d1515;
+      border-radius: 12px;
+      padding: 1.5rem;
+      color: var(--red);
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="page-header">
+      <h1 class="page-title">Your Idea, Rescued 🚀</h1>
+      {% if idea %}
+      <div class="idea-quote">"{{ idea }}"</div>
+      {% endif %}
+    </div>
+
+    {% if error %}
+    <div class="error-box">{{ error }}</div>
+    <div style="text-align:center">
+      <a href="/" class="back-btn">← Roast another idea</a>
+    </div>
+
+    {% elif rescue %}
+
+    <!-- STRONGER IDEA -->
+    <div class="card stronger-card">
+      <p class="section-label">The Stronger Version</p>
+      <p class="stronger-idea-text">{{ rescue.stronger_idea }}</p>
+    </div>
+
+    <!-- WHY IT CAN WORK -->
+    <p class="section-label" style="margin-bottom:0.75rem">Why It Can Work</p>
+    <div class="why-grid" style="margin-bottom:1.5rem">
+      {% for reason in rescue.why_it_can_work %}
+      {% if reason %}
+      <div class="why-card">
+        <div class="why-check">✓</div>
+        <p class="why-text">{{ reason }}</p>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+
+    <!-- KILL THE COMPETITION -->
+    <div class="card compete-card">
+      <p class="section-label">Kill the Competition</p>
+      <p class="compete-text">{{ rescue.kill_the_competition }}</p>
+    </div>
+
+    <!-- VALIDATE IN 30 DAYS -->
+    <div class="card validate-card">
+      <p class="section-label">Validate in 30 Days</p>
+      <ul class="validate-list">
+        {% for step in rescue.validate_in_30_days %}
+        <li class="validate-item">
+          <div class="step-circle">{{ loop.index }}</div>
+          <span>{{ step }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- DON'T DO THIS -->
+    <div class="card dont-card">
+      <p class="section-label">Don't Do This</p>
+      <ul class="dont-list">
+        {% for mistake in rescue.dont_do_this %}
+        <li class="dont-item">
+          <div class="x-badge">✗</div>
+          <span>{{ mistake }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- TARGET CUSTOMER + FIRST REVENUE -->
+    <div class="two-col">
+      <div class="card">
+        <div class="icon-row">
+          <div class="icon-badge">👤</div>
+          <span class="icon-label">Target Customer</span>
+        </div>
+        <p class="detail-text">{{ rescue.target_customer }}</p>
+      </div>
+      <div class="card">
+        <div class="icon-row">
+          <div class="icon-badge">₹</div>
+          <span class="icon-label">First Revenue</span>
+        </div>
+        <p class="detail-text">{{ rescue.first_revenue }}</p>
+      </div>
+    </div>
+
+    <!-- NEW SURVIVAL SCORE -->
+    <div class="score-section">
+      <p class="score-title">Revised Survival Score</p>
+      <div class="score-number">
+        {{ rescue.revised_survival_score }}<span class="score-suffix">/100</span>
+      </div>
+      {% if original_score is defined and original_score < rescue.revised_survival_score %}
+      <p class="score-delta">↑ Up from {{ original_score }} to {{ rescue.revised_survival_score }}</p>
+      {% endif %}
+      {% if rescue.score_explanation %}
+      <p class="score-explanation">{{ rescue.score_explanation }}</p>
+      {% endif %}
+    </div>
+
+    {% endif %}
+
+    <div style="text-align:center">
+      <a href="/" class="back-btn">← Roast another idea</a>
+    </div>
+
+  </div>
+</body>
+</html>

@@ -194,19 +194,9 @@
       margin: 0 auto 1rem;
     }
 
-    /* Last row: 2 cards centered */
-    .roast-grid .roast-card:nth-child(4) { grid-column: 1 / 2; margin-left: auto; width: 100%; }
-    .roast-grid .roast-card:nth-child(5) { grid-column: 2 / 3; margin-right: auto; width: 100%; }
-
     @media (max-width: 860px) {
       .roast-grid {
         grid-template-columns: repeat(2, 1fr);
-      }
-      .roast-grid .roast-card:nth-child(4),
-      .roast-grid .roast-card:nth-child(5) {
-        grid-column: auto;
-        margin: 0;
-        width: 100%;
       }
     }
 
@@ -376,13 +366,38 @@
       flex-shrink: 0;
       transition: opacity 0.15s;
     }
+
+    /* ── Rescue button ── */
+    .rescue-btn {
+      margin-top: 1rem;
+      width: 100%;
+      background: #22c55e;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      padding: 0.9rem 1.5rem;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+      box-shadow: 0 4px 24px rgba(34,197,94,0.25);
+    }
+
+    .rescue-btn:hover {
+      background: #16a34a;
+      box-shadow: 0 4px 32px rgba(34,197,94,0.4);
+    }
+
+    .rescue-btn:active { transform: scale(0.99); }
   </style>
 </head>
 <body>
 
   <header>
     <div class="logo">Roast<span>My</span>Idea 🔥</div>
-    <p class="tagline">Five brutal critics. One survival score. No mercy.</p>
+    <p class="tagline">Six brutal critics. One survival score. No mercy.</p>
   </header>
 
   <div class="input-panel">
@@ -422,11 +437,27 @@
         </svg>
         <span id="copyLabel">Copy Result</span>
       </button>
+
+      <button class="rescue-btn" onclick="rescueIdea()">Okay, how do I actually make this work? →</button>
     </div>
   </div>
 
+  <form id="rescueForm" action="/rescue" method="POST" style="display:none">
+    <input type="hidden" name="idea" id="rescueIdea">
+    <input type="hidden" name="roasts" id="rescueRoasts">
+    <input type="hidden" name="survival_score" id="rescueSurvivalScore">
+  </form>
+
   <script>
     let lastResult = null; // { idea, roasts, survival_score }
+
+    function rescueIdea() {
+      if (!lastResult) return;
+      document.getElementById('rescueIdea').value = lastResult.idea;
+      document.getElementById('rescueRoasts').value = JSON.stringify(lastResult.roasts);
+      document.getElementById('rescueSurvivalScore').value = lastResult.survival_score;
+      document.getElementById('rescueForm').submit();
+    }
 
     function formatResult({ idea, roasts, survival_score }) {
       const lines = [];
@@ -541,12 +572,20 @@
         return;
       }
 
+      if (idea.length < 15) {
+        errorMsg.textContent = 'Please describe your idea in more detail — what problem does it solve and for who?';
+        errorMsg.style.display = 'block';
+        return;
+      }
+
       // Loading state
       btn.disabled = true;
       btn.textContent = 'Roasting...';
       loading.style.display = 'block';
       results.style.display = 'none';
       grid.innerHTML = '';
+      const rescueBtnReset = document.querySelector('.rescue-btn');
+      if (rescueBtnReset) rescueBtnReset.style.display = '';
 
       try {
         const res = await fetch('/roast', {
@@ -571,12 +610,21 @@
         const score = data.survival_score;
         const scoreEl = document.getElementById('scoreNumber');
         const verdictEl = document.getElementById('scoreVerdict');
+        const rescueBtn = document.querySelector('.rescue-btn');
 
-        scoreEl.className = 'score-number ' + (
-          score < 40 ? 'score-red' : score <= 70 ? 'score-orange' : 'score-green'
-        );
-        scoreEl.innerHTML = `${score}<span class="score-suffix">/100</span>`;
-        verdictEl.textContent = scoreVerdict(score);
+        if (data.not_an_idea) {
+          scoreEl.className = 'score-number score-red';
+          scoreEl.innerHTML = `0<span class="score-suffix">/100</span>`;
+          verdictEl.innerHTML = `That's not an idea. That's a product that already exists.<br><strong style="color:var(--text)">Try describing YOUR idea.</strong>`;
+          if (rescueBtn) rescueBtn.style.display = 'none';
+        } else {
+          scoreEl.className = 'score-number ' + (
+            score < 40 ? 'score-red' : score <= 70 ? 'score-orange' : 'score-green'
+          );
+          scoreEl.innerHTML = `${score}<span class="score-suffix">/100</span>`;
+          verdictEl.textContent = scoreVerdict(score);
+          if (rescueBtn) rescueBtn.style.display = '';
+        }
 
         // Show results
         loading.style.display = 'none';
