@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Your Idea, Rescued — RoastMyIdea</title>
+  <title>Your Startup Battle Plan — RoastMyIdea</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -18,9 +18,10 @@
       --accent:    #ff4500;
       --red:       #ef4444;
       --orange:    #f97316;
+      --amber:     #f59e0b;
       --green:     #22c55e;
-      --green-dim: #14532d;
       --blue:      #3b82f6;
+      --purple:    #a855f7;
     }
 
     html { scroll-behavior: smooth; }
@@ -34,10 +35,7 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-    }
+    .container { max-width: 920px; margin: 0 auto; }
 
     /* ── Header ── */
     .page-header {
@@ -67,14 +65,17 @@
       margin: 0 auto;
     }
 
+    /* ── Section spacing ── */
+    .section-gap { margin-bottom: 1.25rem; }
+
     /* ── Section label ── */
     .section-label {
-      font-size: 0.65rem;
+      font-size: 0.62rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.14em;
       color: var(--muted);
-      margin-bottom: 0.75rem;
+      margin-bottom: 0.6rem;
     }
 
     /* ── Card base ── */
@@ -83,30 +84,45 @@
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 1.5rem;
+      margin-bottom: 1.25rem;
     }
 
-    /* ── Stronger idea ── */
+    .body-text {
+      font-size: 0.92rem;
+      line-height: 1.75;
+      color: #d0d0d0;
+    }
+
+    /* ── Stronger idea (green) ── */
     .stronger-card {
       border-color: var(--green);
-      margin-bottom: 1.5rem;
-      box-shadow: 0 0 0 1px rgba(34,197,94,0.12), 0 8px 32px rgba(34,197,94,0.06);
+      box-shadow: 0 0 0 1px rgba(34,197,94,0.1), 0 8px 32px rgba(34,197,94,0.05);
     }
 
     .stronger-card .section-label { color: var(--green); }
 
     .stronger-idea-text {
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       font-weight: 600;
       line-height: 1.6;
       color: var(--text);
     }
+
+    /* ── The Pivot (amber) ── */
+    .pivot-card {
+      border-color: rgba(245,158,11,0.35);
+      background: #0d0a04;
+      border-left: 3px solid var(--amber);
+    }
+
+    .pivot-card .section-label { color: var(--amber); }
 
     /* ── Why it can work ── */
     .why-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 1rem;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
     }
 
     @media (max-width: 640px) {
@@ -131,51 +147,83 @@
       color: var(--green);
       font-size: 0.85rem;
       font-weight: 700;
-      margin-bottom: 0.65rem;
-      flex-shrink: 0;
+      margin-bottom: 0.6rem;
     }
 
     .why-text {
-      font-size: 0.9rem;
-      line-height: 1.6;
+      font-size: 0.88rem;
+      line-height: 1.65;
       color: #ccc;
     }
 
-    /* ── Kill the competition ── */
+    /* ── Kill the competition (red) ── */
     .compete-card {
       border-color: #3d1515;
-      background: #0e0808;
+      background: #0c0707;
       border-left: 3px solid var(--red);
-      margin-bottom: 1.5rem;
     }
 
     .compete-card .section-label { color: var(--red); }
 
-    .compete-text {
-      font-size: 0.95rem;
-      line-height: 1.7;
-      color: #d0d0d0;
+    /* ── Kill metrics ── */
+    .kill-metrics-card {
+      border-color: rgba(59,130,246,0.3);
+      background: #04090f;
+      border-left: 3px solid var(--blue);
+    }
+
+    .kill-metrics-card .section-label { color: var(--blue); }
+
+    .metrics-subtitle {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-style: italic;
+      margin-bottom: 1rem;
+    }
+
+    .kill-metric-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .kill-metric-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.85rem;
+    }
+
+    .metric-number {
+      flex-shrink: 0;
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: var(--blue);
+      opacity: 0.5;
+      min-width: 28px;
+      line-height: 1.4;
+    }
+
+    .metric-text {
+      font-size: 0.9rem;
+      line-height: 1.65;
+      color: #ccc;
     }
 
     /* ── Validate in 30 days ── */
-    .validate-card {
-      margin-bottom: 1.5rem;
-    }
-
     .validate-list {
       list-style: none;
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
-      margin-top: 0.25rem;
+      margin-top: 0.15rem;
     }
 
     .validate-item {
       display: flex;
       align-items: flex-start;
       gap: 0.75rem;
-      font-size: 0.92rem;
-      line-height: 1.6;
+      font-size: 0.9rem;
+      line-height: 1.65;
       color: #ccc;
     }
 
@@ -188,31 +236,27 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       font-weight: 700;
       color: var(--muted);
       margin-top: 1px;
     }
 
     /* ── Don't do this ── */
-    .dont-card {
-      margin-bottom: 1.5rem;
-    }
-
     .dont-list {
       list-style: none;
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
-      margin-top: 0.25rem;
+      margin-top: 0.15rem;
     }
 
     .dont-item {
       display: flex;
       align-items: flex-start;
       gap: 0.75rem;
-      font-size: 0.92rem;
-      line-height: 1.6;
+      font-size: 0.9rem;
+      line-height: 1.65;
       color: #ccc;
     }
 
@@ -231,12 +275,12 @@
       margin-top: 2px;
     }
 
-    /* ── Target + Revenue ── */
+    /* ── Two-col grid ── */
     .two-col {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1rem;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
     }
 
     @media (max-width: 540px) {
@@ -263,35 +307,58 @@
     }
 
     .icon-label {
-      font-size: 0.65rem;
+      font-size: 0.62rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.12em;
       color: var(--muted);
     }
 
-    .detail-text {
-      font-size: 0.92rem;
-      line-height: 1.65;
-      color: #d0d0d0;
+    /* ── Find first 10 customers (blue) ── */
+    .first10-card {
+      border-color: rgba(59,130,246,0.25);
+      border-left: 3px solid var(--blue);
     }
 
-    /* ── New survival score ── */
+    .first10-card .section-label { color: var(--blue); }
+
+    /* ── Unfair advantage (purple) ── */
+    .advantage-card {
+      border-color: rgba(168,85,247,0.3);
+      background: #09060f;
+      border-left: 3px solid var(--purple);
+    }
+
+    .advantage-card .section-label { color: var(--purple); }
+
+    .advantage-inner {
+      display: flex;
+      gap: 0.85rem;
+      align-items: flex-start;
+    }
+
+    .advantage-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* ── Revised survival score ── */
     .score-section {
       background: var(--surface);
       border: 1px solid var(--green);
       border-radius: 20px;
       padding: 2.5rem;
       text-align: center;
-      box-shadow: 0 0 0 1px rgba(34,197,94,0.08), 0 8px 40px rgba(34,197,94,0.08);
+      box-shadow: 0 0 0 1px rgba(34,197,94,0.08), 0 8px 40px rgba(34,197,94,0.06);
       margin-bottom: 2rem;
     }
 
     .score-title {
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.14em;
       color: var(--muted);
       margin-bottom: 1rem;
     }
@@ -307,7 +374,6 @@
     .score-suffix {
       font-size: 2rem;
       font-weight: 300;
-      letter-spacing: 0;
       opacity: 0.4;
     }
 
@@ -368,7 +434,7 @@
   <div class="container">
 
     <div class="page-header">
-      <h1 class="page-title">Your Idea, Rescued 🚀</h1>
+      <h1 class="page-title">Your Startup Battle Plan 🗺️</h1>
       {% if idea %}
       <div class="idea-quote">"{{ idea }}"</div>
       {% endif %}
@@ -376,9 +442,6 @@
 
     {% if error %}
     <div class="error-box">{{ error }}</div>
-    <div style="text-align:center">
-      <a href="/" class="back-btn">← Roast another idea</a>
-    </div>
 
     {% elif rescue %}
 
@@ -388,9 +451,17 @@
       <p class="stronger-idea-text">{{ rescue.stronger_idea }}</p>
     </div>
 
+    <!-- THE PIVOT -->
+    {% if rescue.the_pivot %}
+    <div class="card pivot-card">
+      <p class="section-label">The Pivot</p>
+      <p class="body-text">{{ rescue.the_pivot }}</p>
+    </div>
+    {% endif %}
+
     <!-- WHY IT CAN WORK -->
-    <p class="section-label" style="margin-bottom:0.75rem">Why It Can Work</p>
-    <div class="why-grid" style="margin-bottom:1.5rem">
+    <p class="section-label">Why It Can Work</p>
+    <div class="why-grid">
       {% for reason in rescue.why_it_can_work %}
       {% if reason %}
       <div class="why-card">
@@ -404,56 +475,95 @@
     <!-- KILL THE COMPETITION -->
     <div class="card compete-card">
       <p class="section-label">Kill the Competition</p>
-      <p class="compete-text">{{ rescue.kill_the_competition }}</p>
+      <p class="body-text">{{ rescue.kill_the_competition }}</p>
+    </div>
+
+    <!-- KILL METRICS -->
+    <div class="card kill-metrics-card">
+      <p class="section-label">Kill Metrics: 30-Day Truth Test</p>
+      <p class="metrics-subtitle">These 3 numbers will tell you within 30 days if this will actually work.</p>
+      <div class="kill-metric-list">
+        {% for metric in rescue.kill_metrics %}
+        {% if metric %}
+        <div class="kill-metric-item">
+          <div class="metric-number">0{{ loop.index }}</div>
+          <p class="metric-text">{{ metric }}</p>
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
     </div>
 
     <!-- VALIDATE IN 30 DAYS -->
-    <div class="card validate-card">
+    <div class="card">
       <p class="section-label">Validate in 30 Days</p>
       <ul class="validate-list">
         {% for step in rescue.validate_in_30_days %}
+        {% if step %}
         <li class="validate-item">
           <div class="step-circle">{{ loop.index }}</div>
           <span>{{ step }}</span>
         </li>
+        {% endif %}
         {% endfor %}
       </ul>
     </div>
 
     <!-- DON'T DO THIS -->
-    <div class="card dont-card">
+    <div class="card">
       <p class="section-label">Don't Do This</p>
       <ul class="dont-list">
         {% for mistake in rescue.dont_do_this %}
+        {% if mistake %}
         <li class="dont-item">
           <div class="x-badge">✗</div>
           <span>{{ mistake }}</span>
         </li>
+        {% endif %}
         {% endfor %}
       </ul>
     </div>
 
     <!-- TARGET CUSTOMER + FIRST REVENUE -->
     <div class="two-col">
-      <div class="card">
+      <div class="card" style="margin-bottom:0">
         <div class="icon-row">
           <div class="icon-badge">👤</div>
           <span class="icon-label">Target Customer</span>
         </div>
-        <p class="detail-text">{{ rescue.target_customer }}</p>
+        <p class="body-text">{{ rescue.target_customer }}</p>
       </div>
-      <div class="card">
+      <div class="card" style="margin-bottom:0">
         <div class="icon-row">
           <div class="icon-badge">₹</div>
           <span class="icon-label">First Revenue</span>
         </div>
-        <p class="detail-text">{{ rescue.first_revenue }}</p>
+        <p class="body-text">{{ rescue.first_revenue }}</p>
       </div>
     </div>
 
-    <!-- NEW SURVIVAL SCORE -->
+    <!-- FIND FIRST 10 CUSTOMERS -->
+    {% if rescue.find_first_10_customers %}
+    <div class="card first10-card" style="margin-top:1.25rem">
+      <p class="section-label">Find Your First 10 Customers</p>
+      <p class="body-text">{{ rescue.find_first_10_customers }}</p>
+    </div>
+    {% endif %}
+
+    <!-- UNFAIR ADVANTAGE -->
+    {% if rescue.unfair_advantage %}
+    <div class="card advantage-card">
+      <p class="section-label">Your Unfair Advantage</p>
+      <div class="advantage-inner">
+        <span class="advantage-icon">⚡</span>
+        <p class="body-text">{{ rescue.unfair_advantage }}</p>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- REVISED SURVIVAL SCORE -->
     <div class="score-section">
-      <p class="score-title">Revised Survival Score</p>
+      <p class="score-title">Revised Viability Score</p>
       <div class="score-number">
         {{ rescue.revised_survival_score }}<span class="score-suffix">/100</span>
       </div>
@@ -468,7 +578,7 @@
     {% endif %}
 
     <div style="text-align:center">
-      <a href="/" class="back-btn">← Roast another idea</a>
+      <a href="/" class="back-btn">← Analyze another idea</a>
     </div>
 
   </div>

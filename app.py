@@ -14,112 +14,153 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "roast-my-idea-secret-2024")
 client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
-# ── Persona definitions ───────────────────────────────────────────────────────
+# ── Shared scoring guide appended to every persona ────────────────────────────
 
-_SEVERITY_CALIBRATION = (
-    "IDEA VALIDATION — if the input is NOT a startup idea (e.g. just a product name like 'apple watch', "
-    "'google', 'pizza', a single word, or something with no describable business model), call it out "
-    "humorously and give severity 10. Do not roast it as if it were a real idea. "
-    "SCORING — be ruthless and accurate. Score based on: "
-    "a copy of an existing product with no differentiation → severity 8-10 (survival score 0-20); "
-    "bad idea with no real market → severity 7-9 (survival score 10-30); "
-    "okay idea in a crowded market → severity 5-7 (survival score 30-50); "
-    "genuinely interesting with some moat → severity 3-5 (survival score 50-70); "
-    "exceptional and original → severity 1-3 (survival score 70+). "
-    "Apple Watch already exists — 'build an apple watch' scores severity 10. "
-    "Do NOT give generous scores. If an idea is derivative or vague, severity must be 7+. "
+_SCORING_GUIDE = (
+    "SCORING GUIDE — be accurate, not harsh or lenient: "
+    "copying existing product with zero differentiation → severity 9-10; "
+    "existing idea in crowded market, slight twist → severity 7-8; "
+    "real problem, some competition, unclear differentiation → severity 5-6; "
+    "real problem, clear differentiation, viable market → severity 3-4; "
+    "strong idea, good timing, defensible moat → severity 2-3; "
+    "exceptional, perfect timing, clear path to scale → severity 1-2. "
+    "If someone describes an existing dominant product (e.g. 'build Zomato') → severity 9-10. "
+    "MUST reference REAL companies, REAL market data, REAL trends. "
+    "Your roast must be at minimum 80 words — give real depth, not a one-liner. "
+    'Respond ONLY in valid JSON: {"roast": "<your analysis>", "severity": <integer 1-10>, '
+    '"key_insight": "<one powerful sentence — the single most important thing they need to hear>"} '
+    "No markdown, no preamble, no trailing text."
 )
+
+# ── Persona definitions ───────────────────────────────────────────────────────
 
 PERSONAS = [
     {
-        "key": "cynical_vc",
-        "persona": "Cynical VC",
-        "emoji": "💼",
+        "key": "shark",
+        "persona": "The Shark",
+        "emoji": "🦈",
+        "angle": "Speaking as your potential investor...",
+        "score_label": "Market Potential",
         "system": (
-            "You are a cynical venture capitalist who has sat through over a thousand pitches. "
-            "You speak in clipped, dismissive sentences. You attack market size, defensibility, "
-            "and competitive moat. You have zero patience for hand-waving TAMs or 'network effect' "
-            "buzzwords. Respond ONLY with a JSON object in this exact shape, no markdown, no preamble: "
-            '{\"roast\": \"<your roast in 4 sentences max>\", \"severity\": <integer 1-10>} '
-            "where severity 10 means the idea is completely dead on arrival. "
-            + _SEVERITY_CALIBRATION
+            "You are a cold, numbers-only venture capitalist. You only care about TAM, unit economics, "
+            "and exit potential. Every question you ask is 'how does this become a $1B company?' "
+            "You cite real market sizes (from Statista, CB Insights, Inc42), real comparable exits, "
+            "and brutal assessments of whether this market is large enough to matter to an investor. "
+            "You don't care about the product — only the business model and the size of the prize. "
+            "You ask hard questions about defensibility and moat. "
+            + _SCORING_GUIDE
         ),
     },
     {
-        "key": "broke_college_student",
-        "persona": "Broke College Student",
-        "emoji": "🎓",
+        "key": "failed_founder",
+        "persona": "Been There, Failed That",
+        "emoji": "🔥",
+        "angle": "Speaking as someone who tried this...",
+        "score_label": "Execution Risk",
         "system": (
-            "You are a perpetually broke college student who is the supposed target demographic "
-            "for half of all startups. You are blunt, use casual language, and immediately question "
-            "whether any real person would actually pay money for this. You expose willingness-to-pay "
-            "assumptions ruthlessly. Respond ONLY with a JSON object in this exact shape, no markdown, "
-            'no preamble: {\"roast\": \"<your roast in 4 sentences max>\", \"severity\": <integer 1-10>} '
-            "where severity 10 means absolutely nobody you know would ever pay for this. "
-            + _SEVERITY_CALIBRATION
+            "You tried to build something very similar to this and failed. You share SPECIFIC execution "
+            "nightmares from real experience — the wrong tech hire that cost you 6 months, CAC that was "
+            "10x what you modeled, churn you couldn't fix, unit economics that looked great at 100 users "
+            "and destroyed you at 10,000, the pivot you made too late. You are not bitter — you are "
+            "painfully honest. You give realistic numbers: what hiring a founding CTO actually costs, "
+            "what CAC looks like in this specific vertical, what kills startups like this in year 2. "
+            "You speak from scar tissue, not theory. Name the specific mistakes to avoid. "
+            + _SCORING_GUIDE
         ),
     },
     {
-        "key": "boomer_uncle",
-        "persona": "Boomer Uncle",
-        "emoji": "👴",
+        "key": "market_oracle",
+        "persona": "The Market Oracle",
+        "emoji": "🌍",
+        "angle": "Speaking as a market analyst...",
+        "score_label": "Market Timing",
         "system": (
-            "You are a Boomer uncle at Thanksgiving dinner who has no idea how apps or the internet "
-            "really work. You ask the kind of obvious, naive questions that accidentally expose the "
-            "deepest assumptions in the business model. You are not mean — you are genuinely confused, "
-            "which is somehow worse. Respond ONLY with a JSON object in this exact shape, no markdown, "
-            'no preamble: {\"roast\": \"<your roast in 4 sentences max>\", \"severity\": <integer 1-10>} '
-            "where severity 10 means your questions have completely exposed how shaky the foundation is. "
-            + _SEVERITY_CALIBRATION
+            "You are a deeply researched market analyst. You give ACTUAL market size data (cite sources "
+            "like Statista, McKinsey, Inc42, YourStory, Tracxn), name REAL competitors worldwide and in "
+            "India, assess whether this market is growing or dying, and identify the real opportunity gap "
+            "if any exists. You reference real funding rounds in this space, recent M&A activity, and "
+            "macro trends (AI, regulation, demographics) affecting this market. You distinguish TAM from "
+            "SAM from SOM with real numbers. You are neither positive nor negative — you report reality "
+            "with precision. "
+            + _SCORING_GUIDE
         ),
     },
     {
-        "key": "silicon_valley_bro",
-        "persona": "Silicon Valley Bro",
-        "emoji": "🤙",
+        "key": "angry_customer",
+        "persona": "Your Target Customer",
+        "emoji": "😤",
+        "angle": "Speaking as the person you're building this for...",
+        "score_label": "Customer Fit",
         "system": (
-            "You are a Silicon Valley tech bro who has worked at four unicorns and thinks everything "
-            "has already been done. You liberally name-drop existing startups, YC companies, and failed "
-            "clones. You say things like 'this is literally just X meets Y' and explain why the "
-            "incumbents will squash this effortlessly. Respond ONLY with a JSON object in this exact "
-            'shape, no markdown, no preamble: {\"roast\": \"<your roast in 4 sentences max>\", \"severity\": <integer 1-10>} '
-            "where severity 10 means this has already been tried and definitively failed. "
-            + _SEVERITY_CALIBRATION
+            "You ARE the actual target customer for this product. You react authentically — you name the "
+            "real tools you use today to solve this problem (even if imperfect), your actual switching "
+            "cost, what would genuinely make you pay vs what you'd ignore. What is the real problem this "
+            "solves for you vs what the founder thinks the problem is? What's missing from their pitch? "
+            "How much would you actually pay (be honest, not aspirational)? You are the toughest critic "
+            "because you know your own pain better than any founder does. "
+            + _SCORING_GUIDE
         ),
     },
     {
-        "key": "ruthless_competitor",
-        "persona": "Ruthless Competitor",
+        "key": "the_competitor",
+        "persona": "Your Biggest Competitor",
         "emoji": "⚔️",
+        "angle": "Speaking as the CEO who will crush you...",
+        "score_label": "Defensibility",
         "system": (
-            "You are the CEO of a well-funded competitor who just heard this pitch. You lay out in "
-            "cold, tactical detail exactly how you would replicate this product's core feature in 90 days "
-            "and then undercut on price or bundle it for free to kill the startup. You are clinical, "
-            "not emotional — this is just business. Respond ONLY with a JSON object in this exact shape, "
-            'no markdown, no preamble: {\"roast\": \"<your roast in 4 sentences max>\", \"severity\": <integer 1-10>} '
-            "where severity 10 means you could crush this idea completely within a quarter. "
-            + _SEVERITY_CALIBRATION
+            "You are the CEO of a SPECIFIC, named real competitor in this space — identify yourself by "
+            "name in the first sentence. You lay out in cold tactical detail: your current advantages "
+            "(distribution, data moat, brand recognition, existing customer relationships, funding), "
+            "exactly how you would replicate their core feature in 60-90 days, and how you would price "
+            "it or bundle it free to kill the startup. You explain why your existing customers would "
+            "never switch. You are clinical, not emotional — this is just business. You describe exactly "
+            "what this startup would need to do to make you actually worried about them. "
+            + _SCORING_GUIDE
         ),
     },
     {
-        "key": "the_optimist",
-        "persona": "The Optimist",
-        "emoji": "🌟",
+        "key": "billionaire_builder",
+        "persona": "The Billionaire Builder",
+        "emoji": "💡",
+        "angle": "Speaking as someone who's built this before...",
+        "score_label": "Founder-Market Fit",
         "system": (
-            "You are an enthusiastic startup believer who genuinely sees potential in ideas others dismiss. "
-            "You highlight the ONE biggest opportunity this idea has, but you are also honest about the "
-            "single make-or-break risk that could kill it. You reference real comparable successes and "
-            "genuine market needs. Your tone is enthusiastic but grounded — not a cheerleader, a strategist "
-            "who happens to be bullish. Respond ONLY with a JSON object in this exact shape, no markdown, "
-            'no preamble: {\"roast\": \"<your feedback in 4 sentences max>\", \"severity\": <integer 1-10>} '
-            "where severity 1 means exceptional execution opportunity and you naturally score lower than "
-            "other critics — your severity typically falls between 2-5 because you genuinely believe in "
-            "ideas that others reflexively dismiss."
+            "You are a serial entrepreneur who has built 3+ successful companies — think the mindset of "
+            "Elon Musk crossed with Narayana Murthy. You've seen 10,000 pitches and know the difference "
+            "between a feature and a company. You cut through noise and identify the ONE thing that could "
+            "make this work, or the ONE fatal flaw that will kill it before anything else matters. "
+            "You give real, actionable founder advice — specific pivots, specific go-to-market strategies, "
+            "specific hiring priorities for the first 90 days. You are not a cheerleader. You are honest "
+            "but constructive. You reference what actually worked for companies you've built or know well. "
+            + _SCORING_GUIDE
         ),
     },
 ]
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _clean_json_response(text: str) -> str:
+    """Strip markdown code fences and return the raw JSON string."""
+    text = text.strip()
+    if '```' in text:
+        parts = text.split('```')
+        for part in parts:
+            part = part.strip()
+            if part.startswith('json'):
+                part = part[4:].strip()
+            if part.startswith('{') or part.startswith('['):
+                try:
+                    json.loads(part)
+                    return part
+                except json.JSONDecodeError:
+                    continue
+    # Fall back to first {...} block
+    start = text.find('{')
+    end = text.rfind('}')
+    if start != -1 and end != -1:
+        return text[start:end + 1]
+    return text
+
 
 def _parse_persona_response(raw: str) -> dict:
     # Attempt 1: direct parse
@@ -128,48 +169,80 @@ def _parse_persona_response(raw: str) -> dict:
     except json.JSONDecodeError:
         pass
 
-    # Attempt 2: extract the first flat {...} block containing both keys
-    match = re.search(r'\{[^{}]*"roast"[^{}]*"severity"[^{}]*\}', raw, re.DOTALL)
+    # Attempt 2: strip code fences, then parse
+    cleaned = _clean_json_response(raw)
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        pass
+
+    # Attempt 3: extract the first {...} block that contains "roast"
+    match = re.search(r'\{[^{}]*"roast"[^{}]*\}', raw, re.DOTALL)
     if match:
         try:
             return json.loads(match.group())
         except json.JSONDecodeError:
             pass
 
-    # Attempt 3: plain-text fallback
-    return {"roast": raw[:600], "severity": 5}
+    # Attempt 4: plain-text fallback
+    return {"roast": raw[:800], "severity": 5, "key_insight": ""}
 
 
 def _call_persona(persona: dict, idea: str) -> dict:
-    # APIError subclasses (auth, rate limit, server error, connection) are intentionally
-    # not caught here — they bubble up to the route for proper HTTP error responses.
     message = client.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=300,
+        max_tokens=600,
         system=persona["system"],
-        messages=[{"role": "user", "content": f"The startup idea to roast: {idea}"}],
+        messages=[{"role": "user", "content": f"Analyze this startup idea: {idea}"}],
     )
     raw = message.content[0].text.strip()
     try:
         parsed = _parse_persona_response(raw)
         severity = max(1, min(10, int(parsed.get("severity", 5))))
-        roast_text = str(parsed.get("roast", raw))[:1000]
+        roast_text = str(parsed.get("roast", raw))[:2000]
+        key_insight = str(parsed.get("key_insight", ""))[:400]
     except Exception:
-        # Response parse failure: use a neutral fallback for this persona only.
         return {
             "key": persona["key"],
             "persona": persona["persona"],
             "emoji": persona["emoji"],
+            "angle": persona["angle"],
+            "score_label": persona["score_label"],
             "roast": f"[{persona['persona']} had nothing coherent to say.]",
+            "key_insight": "",
             "severity": 5,
         }
     return {
         "key": persona["key"],
         "persona": persona["persona"],
         "emoji": persona["emoji"],
+        "angle": persona["angle"],
+        "score_label": persona["score_label"],
         "roast": roast_text,
+        "key_insight": key_insight,
         "severity": severity,
     }
+
+
+def _compute_sub_scores(roast_list: list) -> dict:
+    """Derive 4 dimension sub-scores (each 0-25) from individual persona severities."""
+    key_map = {r["key"]: r["severity"] for r in roast_list}
+
+    def _inv(s):
+        return max(0, 25 - round(s * 2.5))
+
+    market = _inv(key_map.get("shark", 5))
+    timing = _inv(key_map.get("market_oracle", 5))
+    diff = _inv(mean([key_map.get("the_competitor", 5), key_map.get("angry_customer", 5)]))
+    execution = _inv(mean([key_map.get("failed_founder", 5), key_map.get("billionaire_builder", 5)]))
+
+    return {
+        "market": market,
+        "differentiation": round(diff),
+        "execution": round(execution),
+        "timing": timing,
+    }
+
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
@@ -208,21 +281,21 @@ def roast():
         is_idea = True  # fail open so a validation outage doesn't block real users
 
     if not is_idea:
-        not_idea_roast = {
-            "roast": "That's not an idea. That's a product that already exists (or just words). Try describing YOUR idea — what problem it solves and for who.",
-            "severity": 10,
-        }
         stub_roasts = [
             {
                 "key": p["key"],
                 "persona": p["persona"],
                 "emoji": p["emoji"],
-                "roast": not_idea_roast["roast"],
+                "angle": p["angle"],
+                "score_label": p["score_label"],
+                "roast": "That's not an idea. That's a product that already exists (or just words). Try describing YOUR idea — what problem it solves and for who.",
+                "key_insight": "Describe a real problem you've personally experienced and want to solve.",
                 "severity": 10,
             }
             for p in PERSONAS
         ]
-        return jsonify({"roasts": stub_roasts, "survival_score": 0, "not_an_idea": True})
+        zero_sub = {"market": 0, "differentiation": 0, "execution": 0, "timing": 0}
+        return jsonify({"roasts": stub_roasts, "survival_score": 0, "sub_scores": zero_sub, "not_an_idea": True})
 
     try:
         with ThreadPoolExecutor(max_workers=6) as executor:
@@ -249,17 +322,23 @@ def roast():
     # Reassemble in original PERSONAS order
     roasts = [results[p["key"]] for p in PERSONAS]
 
-    avg_severity = mean(r["severity"] for r in roasts)
-    survival_score = max(0, 100 - round(avg_severity * 10))
+    sub_scores = _compute_sub_scores(roasts)
+    survival_score = sum(sub_scores.values())
 
-    return jsonify({"roasts": roasts, "survival_score": survival_score})
+    return jsonify({"roasts": roasts, "survival_score": survival_score, "sub_scores": sub_scores})
 
 
-@app.route("/rescue", methods=["POST"])
+@app.route("/rescue", methods=["POST", "GET"])
 def rescue():
-    idea = request.form.get("idea", "").strip()
-    roasts_json = request.form.get("roasts", "[]")
-    survival_score_raw = request.form.get("survival_score", "0")
+    import traceback
+
+    idea = (request.form.get("idea") or request.args.get("idea", "")).strip()
+    roasts_json = request.form.get("roasts") or request.args.get("roasts", "[]")
+    survival_score_raw = request.form.get("survival_score") or request.args.get("survival_score", "0")
+
+    print("=== RESCUE CALLED ===")
+    print("Idea:", idea[:100] if idea else "EMPTY")
+    print("Roasts JSON length:", len(roasts_json))
 
     if not idea:
         return redirect("/")
@@ -275,62 +354,79 @@ def rescue():
         original_score = 0
 
     roasts_summary = "\n".join(
-        f"- {r['persona']} ({r['emoji']}): {r['roast']}" for r in roasts
-    )
+        f"- {r.get('persona','?')} ({r.get('emoji','?')}): {r.get('roast','')[:300]}"
+        for r in roasts
+    ) or "Various concerns about market competition and differentiation."
 
-    rescue_prompt = f"""This startup idea was roasted by 6 critics:
+    print("Roasts summary length:", len(roasts_summary))
+
+    rescue_prompt = f"""Help this startup idea succeed.
 Idea: {idea}
-Roast feedback:
-{roasts_summary}
+Expert feedback received:
+{roasts_summary[:1500]}
 
-Now help them actually succeed. Return ONLY this JSON:
+Return ONLY this JSON (no markdown, no fences):
 {{
-  "stronger_idea": "A reframed, stronger version of their idea that addresses the main criticisms",
-  "why_it_can_work": ["Genuine reason 1 this could succeed", "Genuine reason 2", "Genuine reason 3"],
-  "kill_the_competition": "Exactly how to beat the competitors the critics mentioned",
-  "validate_in_30_days": ["Step 1", "Step 2", "Step 3", "Step 4", "Step 5"],
-  "dont_do_this": ["Mistake 1", "Mistake 2", "Mistake 3"],
-  "target_customer": "Exactly who to sell to first — be very specific",
-  "first_revenue": "How to make the first ₹10,000 from this idea",
+  "stronger_idea": "A reframed, stronger version of their idea that directly addresses the main criticisms",
+  "why_it_can_work": ["Genuine reason 1 this could succeed with real data", "Genuine reason 2", "Genuine reason 3"],
+  "the_pivot": "If the original idea is weak, suggest a SPECIFIC concrete pivot — not generic advice, a real business model shift",
+  "kill_the_competition": "Exactly how to beat the specific competitors the critics mentioned — tactical, not generic",
+  "kill_metrics": ["Metric 1: specific number and what it proves in 30 days", "Metric 2: specific number and what it proves", "Metric 3: specific number and what it proves"],
+  "validate_in_30_days": ["Specific action step 1", "Specific action step 2", "Specific action step 3", "Specific action step 4", "Specific action step 5"],
+  "find_first_10_customers": "Exactly WHERE to find the first 10 customers (specific platforms, communities, events), WHAT to say to them, and HOW to close them",
+  "unfair_advantage": "What unique advantage does this specific founder have that well-funded competitors cannot easily replicate",
+  "dont_do_this": ["Specific mistake 1 that kills startups like this", "Specific mistake 2", "Specific mistake 3"],
+  "target_customer": "Exactly who to sell to first — specific demographics, psychographics, and where to find them",
+  "first_revenue": "How to make the first ₹10,000 from this idea — specific actions in sequence",
   "revised_survival_score": 65,
-  "score_explanation": "Why the improved version scores higher"
+  "score_explanation": "Why the improved version scores higher than the original"
 }}"""
 
     try:
         message = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=1500,
-            system="You are a startup strategist who helps founders fix bad ideas. Respond in valid JSON only.",
+            model="claude-haiku-4-5-20251001",
+            max_tokens=2000,
+            system="You are a startup strategist who helps founders fix bad ideas. Respond in valid JSON only. No markdown, no code fences, no preamble.",
             messages=[{"role": "user", "content": rescue_prompt}],
         )
         raw = message.content[0].text.strip()
+        print("RESCUE RAW (first 300 chars):", raw[:300])
 
+        cleaned = _clean_json_response(raw)
         try:
-            rescue_data = json.loads(raw)
-        except json.JSONDecodeError:
-            match = re.search(r'\{.*\}', raw, re.DOTALL)
-            if match:
-                rescue_data = json.loads(match.group())
-            else:
-                raise ValueError("Could not parse rescue response")
+            rescue_data = json.loads(cleaned)
+        except json.JSONDecodeError as parse_err:
+            print("RESCUE JSON PARSE ERROR:", parse_err)
+            print("Cleaned text:", cleaned[:500])
+            raise ValueError(f"Could not parse rescue response: {parse_err}")
 
-        # Normalise why_it_can_work to a list of exactly 3 items
-        why = rescue_data.get("why_it_can_work", [])
-        if isinstance(why, str):
-            why = [line.strip().lstrip("0123456789.-) ") for line in why.splitlines() if line.strip()]
-        rescue_data["why_it_can_work"] = (why + ["", "", ""])[:3]
+        # Normalise list fields
+        def _to_list(val, n):
+            if isinstance(val, str):
+                val = [ln.strip().lstrip("0123456789.-) ") for ln in val.splitlines() if ln.strip()]
+            return (list(val) + [""] * n)[:n]
 
-        # Clamp revised score
+        rescue_data["why_it_can_work"] = _to_list(rescue_data.get("why_it_can_work", []), 3)
+        rescue_data["kill_metrics"] = _to_list(rescue_data.get("kill_metrics", []), 3)
+        rescue_data["validate_in_30_days"] = _to_list(rescue_data.get("validate_in_30_days", []), 5)
+        rescue_data["dont_do_this"] = _to_list(rescue_data.get("dont_do_this", []), 3)
         rescue_data["revised_survival_score"] = max(
             0, min(100, int(rescue_data.get("revised_survival_score", 65)))
         )
 
     except anthropic.AuthenticationError:
-        return render_template("rescue.html", error="Invalid API key.", idea=idea)
+        return render_template("rescue.html", error="Invalid API key. Check your ANTHROPIC_API_KEY.", idea=idea)
     except anthropic.RateLimitError:
         return render_template("rescue.html", error="Rate limit reached. Wait a moment and try again.", idea=idea)
-    except Exception:
-        return render_template("rescue.html", error="Failed to generate rescue plan. Please try again.", idea=idea)
+    except anthropic.APIStatusError as e:
+        print("RESCUE API STATUS ERROR:", e.status_code, e.message)
+        return render_template("rescue.html", error=f"Claude API error (HTTP {e.status_code}). Try again shortly.", idea=idea)
+    except anthropic.APIConnectionError:
+        return render_template("rescue.html", error="Couldn't reach Claude. Check your internet connection.", idea=idea)
+    except Exception as e:
+        print("RESCUE UNEXPECTED ERROR:", e)
+        traceback.print_exc()
+        return render_template("rescue.html", error=f"Failed to generate battle plan: {e}", idea=idea)
 
     return render_template(
         "rescue.html",

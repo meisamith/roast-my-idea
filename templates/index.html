@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RoastMyIdea</title>
+  <title>Will Your Idea Survive the Real World?</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -16,10 +16,10 @@
       --text:      #f2f2f2;
       --muted:     #666;
       --accent:    #ff4500;
-      --accent-dim:#7a2000;
       --red:       #ef4444;
       --orange:    #f97316;
       --green:     #22c55e;
+      --amber:     #f59e0b;
     }
 
     html { scroll-behavior: smooth; }
@@ -39,22 +39,19 @@
       margin-bottom: 3rem;
     }
 
-    .logo {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 2rem;
-      font-weight: 800;
+    .site-title {
+      font-size: clamp(1.5rem, 4vw, 2.4rem);
+      font-weight: 900;
       letter-spacing: -1px;
-      color: var(--text);
-      margin-bottom: 0.5rem;
+      line-height: 1.15;
+      margin-bottom: 0.6rem;
     }
 
-    .logo span { color: var(--accent); }
+    .site-title .highlight { color: var(--accent); }
 
     .tagline {
       color: var(--muted);
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       letter-spacing: 0.01em;
     }
 
@@ -75,7 +72,7 @@
       line-height: 1.6;
       padding: 1.1rem 1.25rem;
       resize: vertical;
-      min-height: 130px;
+      min-height: 140px;
       outline: none;
       transition: border-color 0.2s, box-shadow 0.2s;
     }
@@ -87,7 +84,32 @@
       box-shadow: 0 0 0 3px rgba(255,69,0,0.12);
     }
 
-    .roast-btn {
+    .textarea-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.4rem;
+      gap: 1rem;
+    }
+
+    .input-hint {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .char-counter {
+      font-size: 0.78rem;
+      color: var(--muted);
+      white-space: nowrap;
+      transition: color 0.2s;
+      flex-shrink: 0;
+    }
+
+    .char-counter.near-limit { color: var(--orange); }
+    .char-counter.at-limit   { color: var(--red); font-weight: 600; }
+
+    .analyze-btn {
       margin-top: 0.85rem;
       width: 100%;
       background: var(--accent);
@@ -104,28 +126,13 @@
       box-shadow: 0 4px 24px rgba(255,69,0,0.25);
     }
 
-    .roast-btn:hover:not(:disabled) {
+    .analyze-btn:hover:not(:disabled) {
       background: #e03d00;
       box-shadow: 0 4px 32px rgba(255,69,0,0.4);
     }
 
-    .roast-btn:active:not(:disabled) { transform: scale(0.99); }
-    .roast-btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
-
-    .textarea-footer {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 0.4rem;
-    }
-
-    .char-counter {
-      font-size: 0.78rem;
-      color: var(--muted);
-      transition: color 0.2s;
-    }
-
-    .char-counter.near-limit { color: var(--orange); }
-    .char-counter.at-limit   { color: var(--red); font-weight: 600; }
+    .analyze-btn:active:not(:disabled) { transform: scale(0.99); }
+    .analyze-btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
 
     .error-msg {
       margin-top: 0.85rem;
@@ -177,27 +184,25 @@
 
     .results-label {
       text-align: center;
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.14em;
       color: var(--muted);
       margin-bottom: 1.5rem;
     }
 
-    /* ── Roast grid ── */
+    /* ── Expert grid ── */
     .roast-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 1rem;
-      max-width: 1100px;
+      max-width: 1140px;
       margin: 0 auto 1rem;
     }
 
     @media (max-width: 860px) {
-      .roast-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
+      .roast-grid { grid-template-columns: repeat(2, 1fr); }
     }
 
     @media (max-width: 540px) {
@@ -211,11 +216,10 @@
       padding: 1.4rem;
       display: flex;
       flex-direction: column;
-      gap: 0.85rem;
+      gap: 0.9rem;
       opacity: 0;
       transform: translateY(16px);
       transition: opacity 0.4s ease, transform 0.4s ease, border-color 0.2s;
-      animation: none;
     }
 
     .roast-card.visible {
@@ -223,20 +227,25 @@
       transform: translateY(0);
     }
 
-    .roast-card:hover {
-      border-color: var(--border-2);
-    }
+    .roast-card:hover { border-color: var(--border-2); }
 
     .card-header {
       display: flex;
-      align-items: center;
-      gap: 0.6rem;
+      align-items: flex-start;
+      gap: 0.65rem;
     }
 
     .card-emoji {
-      font-size: 1.4rem;
+      font-size: 1.5rem;
       line-height: 1;
       flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .card-header-text {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
     }
 
     .card-persona {
@@ -244,7 +253,13 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
+      color: var(--text);
+    }
+
+    .card-angle {
+      font-size: 0.72rem;
       color: var(--muted);
+      font-style: italic;
     }
 
     .card-divider {
@@ -252,17 +267,43 @@
       background: var(--border);
     }
 
-    .card-roast {
-      font-size: 0.92rem;
-      line-height: 1.7;
-      color: #d0d0d0;
-      flex: 1;
+    /* ── Key insight box ── */
+    .card-insight {
+      background: rgba(245,158,11,0.07);
+      border: 1px solid rgba(245,158,11,0.2);
+      border-radius: 10px;
+      padding: 0.75rem 0.9rem;
     }
 
+    .insight-label {
+      display: block;
+      font-size: 0.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--amber);
+      margin-bottom: 0.35rem;
+    }
+
+    .insight-text {
+      font-size: 0.82rem;
+      line-height: 1.55;
+      color: #e0c97a;
+    }
+
+    /* ── Score bar row ── */
     .card-severity {
       display: flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.5rem;
+    }
+
+    .score-label-text {
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: var(--muted);
+      white-space: nowrap;
+      min-width: 80px;
     }
 
     .severity-bar-track {
@@ -287,9 +328,9 @@
       white-space: nowrap;
     }
 
-    /* ── Survival score ── */
+    /* ── Viability score ── */
     .score-section {
-      max-width: 1100px;
+      max-width: 1140px;
       margin: 2rem auto 0;
       padding: 2.5rem;
       background: var(--surface);
@@ -299,10 +340,10 @@
     }
 
     .score-title {
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.14em;
       color: var(--muted);
       margin-bottom: 1rem;
     }
@@ -324,7 +365,7 @@
 
     .score-verdict {
       margin-top: 0.75rem;
-      font-size: 0.95rem;
+      font-size: 1rem;
       color: var(--muted);
       font-style: italic;
     }
@@ -333,9 +374,61 @@
     .score-orange { color: var(--orange); }
     .score-green  { color: var(--green); }
 
-    /* ── Copy button ── */
+    /* ── Sub scores ── */
+    .sub-scores {
+      max-width: 480px;
+      margin: 2rem auto 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      text-align: left;
+    }
+
+    .sub-score-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .sub-score-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      min-width: 150px;
+    }
+
+    .sub-score-track {
+      flex: 1;
+      height: 4px;
+      background: var(--border-2);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .sub-score-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .sub-score-value {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--muted);
+      white-space: nowrap;
+      min-width: 36px;
+      text-align: right;
+    }
+
+    /* ── Action buttons ── */
+    .score-actions {
+      margin-top: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
     .copy-btn {
-      margin-top: 1.75rem;
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
@@ -357,20 +450,12 @@
       background: var(--surface-2);
     }
 
-    .copy-btn.copied {
-      color: var(--green);
-      border-color: var(--green);
-    }
+    .copy-btn.copied { color: var(--green); border-color: var(--green); }
+    .copy-btn svg { flex-shrink: 0; }
 
-    .copy-btn svg {
-      flex-shrink: 0;
-      transition: opacity 0.15s;
-    }
-
-    /* ── Rescue button ── */
     .rescue-btn {
-      margin-top: 1rem;
       width: 100%;
+      max-width: 480px;
       background: #22c55e;
       color: #fff;
       border: none;
@@ -391,54 +476,89 @@
     }
 
     .rescue-btn:active { transform: scale(0.99); }
+
+    /* ── Collapsible full analysis ── */
+    .critic-full-text {
+      display: none;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      font-size: 0.88rem;
+      line-height: 1.75;
+      color: #ccc;
+    }
+
+    .critic-full-text.expanded { display: block; }
+
+    .expand-btn {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.35);
+      font-size: 0.75rem;
+      font-family: inherit;
+      cursor: pointer;
+      padding: 6px 0 0 0;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: color 0.2s;
+      letter-spacing: 0.01em;
+    }
+
+    .expand-btn:hover { color: rgba(255,255,255,0.65); }
   </style>
 </head>
 <body>
 
   <header>
-    <div class="logo">Roast<span>My</span>Idea 🔥</div>
-    <p class="tagline">Six brutal critics. One survival score. No mercy.</p>
+    <h1 class="site-title">Will Your Idea <span class="highlight">Survive</span> the Real World? 🌍</h1>
+    <p class="tagline">6 brutally honest experts. Real market analysis. No sugarcoating.</p>
   </header>
 
   <div class="input-panel">
     <textarea
       id="idea"
-      placeholder="Describe your startup idea... e.g. 'An app where dog owners rent their pets to lonely people for $10/hour'"
-      rows="4"
+      placeholder="Describe your startup idea... What problem does it solve? Who is it for? How does it make money?"
+      rows="5"
       maxlength="500"
     ></textarea>
     <div class="textarea-footer">
+      <span class="input-hint">The more detail you give, the better the analysis. Vague ideas get vague feedback.</span>
       <span class="char-counter" id="charCounter">0 / 500</span>
     </div>
-    <button class="roast-btn" id="roastBtn" onclick="roastIdea()">Roast My Idea 🔥</button>
+    <button class="analyze-btn" id="analyzeBtn" onclick="analyzeIdea()">Analyze My Idea →</button>
     <p class="error-msg" id="errorMsg"></p>
   </div>
 
   <div id="loading">
     <div class="loader-ring"></div>
-    <p class="loader-text">Summoning the roasters<span class="loader-dots"></span></p>
+    <p class="loader-text">Consulting the experts<span class="loader-dots"></span></p>
   </div>
 
   <div id="results">
-    <p class="results-label">The Panel Has Spoken</p>
+    <p class="results-label">The Verdict Is In</p>
 
     <div class="roast-grid" id="roastGrid"></div>
 
     <div class="score-section">
-      <p class="score-title">Survival Score</p>
+      <p class="score-title">Startup Viability Score</p>
       <div class="score-number" id="scoreNumber">—<span class="score-suffix">/100</span></div>
       <p class="score-verdict" id="scoreVerdict"></p>
-      <button class="copy-btn" id="copyBtn" onclick="copyResult()">
-        <svg id="copyIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-        </svg>
-        <svg id="checkIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none">
-          <polyline points="20 6 9 17 4 12"/>
-        </svg>
-        <span id="copyLabel">Copy Result</span>
-      </button>
 
-      <button class="rescue-btn" onclick="rescueIdea()">Okay, how do I actually make this work? →</button>
+      <div class="sub-scores" id="subScores"></div>
+
+      <div class="score-actions">
+        <button class="copy-btn" id="copyBtn" onclick="copyResult()">
+          <svg id="copyIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          <svg id="checkIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          <span id="copyLabel">Copy Result</span>
+        </button>
+        <button class="rescue-btn" id="rescueBtn" onclick="rescueIdea()">Get Your Startup Battle Plan →</button>
+      </div>
     </div>
   </div>
 
@@ -449,7 +569,7 @@
   </form>
 
   <script>
-    let lastResult = null; // { idea, roasts, survival_score }
+    let lastResult = null; // { idea, roasts, survival_score, sub_scores }
 
     function rescueIdea() {
       if (!lastResult) return;
@@ -463,38 +583,32 @@
       const lines = [];
       lines.push(`💡 "${idea}"`);
       lines.push('');
-      lines.push('I roasted my startup idea and here\'s what the panel said:\n');
-
+      lines.push('I had my startup idea evaluated by 6 experts:\n');
       roasts.forEach(r => {
         lines.push(`${r.emoji} ${r.persona.toUpperCase()}`);
         lines.push(r.roast);
+        if (r.key_insight) lines.push(`Key insight: ${r.key_insight}`);
         lines.push('');
       });
-
-      const verdict = scoreVerdict(survival_score);
-      lines.push(`🔥 Survival Score: ${survival_score}/100`);
-      lines.push(`"${verdict}"`);
+      lines.push(`🌍 Startup Viability Score: ${survival_score}/100`);
+      lines.push(`"${scoreVerdict(survival_score)}"`);
       lines.push('');
-      lines.push('Roast your idea → roastmyidea.com');
-
+      lines.push('Test your idea → roastmyidea.com');
       return lines.join('\n');
     }
 
     async function copyResult() {
       if (!lastResult) return;
-
       const btn = document.getElementById('copyBtn');
       const copyIcon = document.getElementById('copyIcon');
       const checkIcon = document.getElementById('checkIcon');
       const label = document.getElementById('copyLabel');
-
       try {
         await navigator.clipboard.writeText(formatResult(lastResult));
         btn.classList.add('copied');
         copyIcon.style.display = 'none';
         checkIcon.style.display = '';
         label.textContent = 'Copied!';
-
         setTimeout(() => {
           btn.classList.remove('copied');
           copyIcon.style.display = '';
@@ -502,7 +616,6 @@
           label.textContent = 'Copy Result';
         }, 2200);
       } catch {
-        // Fallback for browsers that block clipboard without interaction context
         label.textContent = 'Copy failed';
         setTimeout(() => { label.textContent = 'Copy Result'; }, 2000);
       }
@@ -514,6 +627,20 @@
       return '#22c55e';
     }
 
+    function subScoreColor(pct) {
+      if (pct >= 60) return '#22c55e';
+      if (pct >= 40) return '#f97316';
+      return '#ef4444';
+    }
+
+    function toggleCritic(btn) {
+      const card = btn.closest('.roast-card');
+      const fullText = card.querySelector('.critic-full-text');
+      const isExpanded = fullText.classList.contains('expanded');
+      fullText.classList.toggle('expanded');
+      btn.textContent = isExpanded ? 'Read full analysis ↓' : 'Collapse ↑';
+    }
+
     function buildCard(roast, index) {
       const card = document.createElement('div');
       card.className = 'roast-card';
@@ -521,17 +648,29 @@
 
       const fillPct = (roast.severity / 10) * 100;
       const barColor = severityColor(roast.severity);
+      const insightHtml = roast.key_insight ? `
+        <div class="card-insight">
+          <span class="insight-label">Key Insight</span>
+          <p class="insight-text">${escapeHtml(roast.key_insight)}</p>
+        </div>
+      ` : '';
 
       card.innerHTML = `
         <div class="card-header">
           <span class="card-emoji">${roast.emoji}</span>
-          <span class="card-persona">${roast.persona}</span>
+          <div class="card-header-text">
+            <span class="card-persona">${escapeHtml(roast.persona)}</span>
+            <span class="card-angle">${escapeHtml(roast.angle || '')}</span>
+          </div>
         </div>
         <div class="card-divider"></div>
-        <p class="card-roast">${escapeHtml(roast.roast)}</p>
+        ${insightHtml}
+        <button class="expand-btn" onclick="toggleCritic(this)">Read full analysis ↓</button>
+        <div class="critic-full-text">${escapeHtml(roast.roast)}</div>
         <div class="card-severity">
+          <span class="score-label-text">${escapeHtml(roast.score_label || '')}</span>
           <div class="severity-bar-track">
-            <div class="severity-bar-fill" style="width:0%; background:${barColor}" data-fill="${fillPct}"></div>
+            <div class="severity-bar-fill" style="width:0%;background:${barColor}" data-fill="${fillPct}"></div>
           </div>
           <span class="severity-label">${roast.severity}/10</span>
         </div>
@@ -539,8 +678,30 @@
       return card;
     }
 
+    function buildSubScores(subScores) {
+      const dims = [
+        { label: 'Market Opportunity', key: 'market' },
+        { label: 'Differentiation',    key: 'differentiation' },
+        { label: 'Execution Feasibility', key: 'execution' },
+        { label: 'Timing & Trends',    key: 'timing' },
+      ];
+      return dims.map(d => {
+        const val = subScores[d.key] || 0;
+        const pct = (val / 25) * 100;
+        const color = subScoreColor(pct);
+        return `
+          <div class="sub-score-row">
+            <span class="sub-score-label">${d.label}</span>
+            <div class="sub-score-track">
+              <div class="sub-score-fill" style="width:0%;background:${color}" data-fill="${pct}"></div>
+            </div>
+            <span class="sub-score-value">${val}/25</span>
+          </div>`;
+      }).join('');
+    }
+
     function escapeHtml(str) {
-      return str
+      return String(str)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
@@ -548,17 +709,17 @@
     }
 
     function scoreVerdict(n) {
-      if (n < 20) return "Your idea didn't survive the room.";
-      if (n < 40) return "Rough. Very rough. But failure builds character.";
-      if (n < 60) return "Mixed signals. Pivot, fix, or pray.";
-      if (n < 75) return "Not bad. A few holes to patch.";
-      if (n < 90) return "Solid idea. Don't blow the execution.";
-      return "Somehow walked out unscathed. Impressive.";
+      if (n <= 20) return "Don't quit your day job.";
+      if (n <= 35) return "This needs serious rethinking.";
+      if (n <= 50) return "Interesting but needs major differentiation.";
+      if (n <= 65) return "Has potential — execution is everything.";
+      if (n <= 80) return "Strong idea. Move fast.";
+      return "Why are you still reading this? Go build it.";
     }
 
-    async function roastIdea() {
+    async function analyzeIdea() {
       const idea = document.getElementById('idea').value.trim();
-      const btn = document.getElementById('roastBtn');
+      const btn = document.getElementById('analyzeBtn');
       const errorMsg = document.getElementById('errorMsg');
       const loading = document.getElementById('loading');
       const results = document.getElementById('results');
@@ -578,14 +739,14 @@
         return;
       }
 
-      // Loading state
+      // Reset state
       btn.disabled = true;
-      btn.textContent = 'Roasting...';
+      btn.textContent = 'Analyzing...';
       loading.style.display = 'block';
       results.style.display = 'none';
       grid.innerHTML = '';
-      const rescueBtnReset = document.querySelector('.rescue-btn');
-      if (rescueBtnReset) rescueBtnReset.style.display = '';
+      const rescueBtn = document.getElementById('rescueBtn');
+      if (rescueBtn) rescueBtn.style.display = '';
 
       try {
         const res = await fetch('/roast', {
@@ -595,51 +756,45 @@
         });
 
         const data = await res.json();
-
         if (!res.ok) throw new Error(data.error || 'Something went wrong.');
 
-        // Store for copy
-        lastResult = { idea, roasts: data.roasts, survival_score: data.survival_score };
+        lastResult = { idea, roasts: data.roasts, survival_score: data.survival_score, sub_scores: data.sub_scores };
 
-        // Build cards
         data.roasts.forEach((roast, i) => {
           grid.appendChild(buildCard(roast, i));
         });
 
-        // Survival score
         const score = data.survival_score;
         const scoreEl = document.getElementById('scoreNumber');
         const verdictEl = document.getElementById('scoreVerdict');
-        const rescueBtn = document.querySelector('.rescue-btn');
+        const subScoresEl = document.getElementById('subScores');
 
         if (data.not_an_idea) {
           scoreEl.className = 'score-number score-red';
           scoreEl.innerHTML = `0<span class="score-suffix">/100</span>`;
           verdictEl.innerHTML = `That's not an idea. That's a product that already exists.<br><strong style="color:var(--text)">Try describing YOUR idea.</strong>`;
+          subScoresEl.innerHTML = '';
           if (rescueBtn) rescueBtn.style.display = 'none';
         } else {
-          scoreEl.className = 'score-number ' + (
-            score < 40 ? 'score-red' : score <= 70 ? 'score-orange' : 'score-green'
-          );
+          scoreEl.className = 'score-number ' + (score <= 35 ? 'score-red' : score <= 65 ? 'score-orange' : 'score-green');
           scoreEl.innerHTML = `${score}<span class="score-suffix">/100</span>`;
           verdictEl.textContent = scoreVerdict(score);
+          subScoresEl.innerHTML = buildSubScores(data.sub_scores || {});
           if (rescueBtn) rescueBtn.style.display = '';
         }
 
-        // Show results
         loading.style.display = 'none';
         results.style.display = 'block';
 
-        // Staggered card entrance
         requestAnimationFrame(() => {
-          document.querySelectorAll('.roast-card').forEach(card => {
-            card.classList.add('visible');
-          });
+          document.querySelectorAll('.roast-card').forEach(card => card.classList.add('visible'));
         });
 
-        // Animate severity bars after cards appear
         setTimeout(() => {
           document.querySelectorAll('.severity-bar-fill').forEach(bar => {
+            bar.style.width = bar.dataset.fill + '%';
+          });
+          document.querySelectorAll('.sub-score-fill').forEach(bar => {
             bar.style.width = bar.dataset.fill + '%';
           });
         }, 200);
@@ -652,7 +807,7 @@
         errorMsg.style.display = 'block';
       } finally {
         btn.disabled = false;
-        btn.textContent = 'Roast My Idea 🔥';
+        btn.textContent = 'Analyze My Idea →';
       }
     }
 
@@ -667,7 +822,7 @@
     });
 
     ideaEl.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) roastIdea();
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) analyzeIdea();
     });
   </script>
 </body>
