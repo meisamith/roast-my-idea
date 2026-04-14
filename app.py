@@ -142,27 +142,27 @@ PERSONAS = [
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def _clean_json_response(text: str) -> str:
-    """Strip markdown code fences and return the raw JSON string."""
-    text = text.strip()
-    if '```' in text:
-        parts = text.split('```')
-        for part in parts:
-            part = part.strip()
-            if part.startswith('json'):
-                part = part[4:].strip()
-            if part.startswith('{') or part.startswith('['):
-                try:
-                    json.loads(part)
-                    return part
-                except json.JSONDecodeError:
-                    continue
-    # Fall back to first {...} block
-    start = text.find('{')
-    end = text.rfind('}')
-    if start != -1 and end != -1:
-        return text[start:end + 1]
-    return text
+def clean_json_response(raw):
+    """Extract pure JSON from Claude response - handles all edge cases"""
+    if not raw:
+        return raw
+    raw = raw.strip()
+
+    # Method 1: Remove ```json ... ``` fences directly
+    if raw.startswith('```'):
+        # Remove opening fence
+        raw = re.sub(r'^```(?:json)?\s*\n?', '', raw)
+        # Remove closing fence
+        raw = re.sub(r'\n?```\s*$', '', raw)
+        raw = raw.strip()
+
+    # Method 2: Find the JSON object by braces
+    start = raw.find('{')
+    end = raw.rfind('}')
+    if start != -1 and end != -1 and end > start:
+        return raw[start:end+1]
+
+    return raw
 
 
 def _parse_persona_response(raw: str) -> dict:
@@ -173,7 +173,7 @@ def _parse_persona_response(raw: str) -> dict:
         pass
 
     # Attempt 2: strip code fences, then parse
-    cleaned = _clean_json_response(raw)
+    cleaned = clean_json_response(raw)
     try:
         return json.loads(cleaned)
     except json.JSONDecodeError:
@@ -410,7 +410,8 @@ Return ONLY this JSON (no markdown, no fences):
         raw = message.content[0].text.strip()
         print("RESCUE RAW (first 300 chars):", raw[:300])
 
-        cleaned = _clean_json_response(raw)
+        cleaned = clean_json_response(raw)
+        print("CLEANED FINAL:", cleaned[:100] if cleaned else "EMPTY!")
         try:
             rescue_data = json.loads(cleaned)
         except json.JSONDecodeError as parse_err:
