@@ -191,6 +191,33 @@ def _parse_persona_response(raw: str) -> dict:
     return {"roast": raw[:800], "severity": 5, "key_insight": ""}
 
 
+def extract_roast_text(text):
+    """Extract clean roast text from any format"""
+    text = text.strip()
+    # Remove markdown fences
+    if '```' in text:
+        parts = text.split('```')
+        for part in parts:
+            part = part.strip()
+            if part.startswith('json'):
+                part = part[4:].strip()
+            if len(part) > 50:
+                text = part
+                break
+    # If it looks like JSON with a "roast" key, extract just the value
+    if text.startswith('{') and '"roast"' in text:
+        try:
+            parsed = json.loads(text)
+            if 'roast' in parsed:
+                return parsed['roast']
+        except Exception:
+            # Try to extract value after "roast":
+            match = re.search(r'"roast"\s*:\s*"(.*?)"\s*[,}]', text, re.DOTALL)
+            if match:
+                return match.group(1)
+    return text
+
+
 def _call_persona(persona: dict, idea: str) -> dict:
     message = client.messages.create(
         model="claude-sonnet-4-6",
@@ -202,7 +229,7 @@ def _call_persona(persona: dict, idea: str) -> dict:
     try:
         parsed = _parse_persona_response(raw)
         severity = max(1, min(10, int(parsed.get("severity", 5))))
-        roast_text = str(parsed.get("roast", raw))[:2000]
+        roast_text = extract_roast_text(str(parsed.get("roast", raw)))[:2000]
         key_insight = str(parsed.get("key_insight", ""))[:400]
     except Exception:
         return {
@@ -336,30 +363,18 @@ def rescue():
     import traceback
 
     idea = (request.form.get("idea") or request.args.get("idea", "")).strip()
-    roasts_json = request.form.get("roasts") or request.args.get("roasts", "[]")
-    survival_score_raw = request.form.get("survival_score") or request.args.get("survival_score", "0")
+    roasts_summary = (request.form.get("roasts_summary") or request.args.get("roasts_summary", "")).strip()
 
     print("=== RESCUE CALLED ===")
-    print("Idea:", idea[:100] if idea else "EMPTY")
-    print("Roasts JSON length:", len(roasts_json))
+    print("IDEA:", request.form.get('idea', 'EMPTY'))
+    print("ROASTS:", request.form.get('roasts_summary', 'EMPTY')[:100])
 
     if not idea:
         return redirect("/")
 
-    try:
-        roasts = json.loads(roasts_json)
-    except json.JSONDecodeError:
-        roasts = []
+    original_score = 0
 
-    try:
-        original_score = max(0, min(100, int(survival_score_raw)))
-    except (ValueError, TypeError):
-        original_score = 0
-
-    roasts_summary = "\n".join(
-        f"- {r.get('persona','?')} ({r.get('emoji','?')}): {r.get('roast','')[:300]}"
-        for r in roasts
-    ) or "Various concerns about market competition and differentiation."
+    roasts_summary = roasts_summary or "Various concerns about market competition and differentiation."
 
     print("Roasts summary length:", len(roasts_summary))
 
